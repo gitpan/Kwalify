@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: pkwalify.t,v 1.5 2006/11/23 20:56:45 eserte Exp $
+# $Id: pkwalify.t,v 1.5 2006/11/23 20:56:45 eserte Exp eserte $
 # Author: Slaven Rezic
 #
 
@@ -67,7 +67,7 @@ my $v;
 GetOptions("v!")
     or die "usage: $0 [-v]";
 
-plan tests => scalar(@yaml_syck_defs) + scalar(@json_defs);
+plan tests => 2*(scalar(@yaml_syck_defs) + scalar(@json_defs));
 
 my $script = "pkwalify";
 my @cmd = ($^X, "-Mblib", $script);
@@ -112,9 +112,15 @@ sub any_test {
 	} else {
 	    $valid = 1;
 	}
+	if ($valid) {
+	    is($stderr, "", "No warnings in @cmd");
+	} else {
+	    isnt($stderr, "", "There are warnings in @cmd");
+	}
     } else {
 	system(@cmd);
 	$valid = $? == 0 ? 1 : 0;
+    SKIP: { skip("No stderr test without IPC::Run", 1) }
     }
     is($valid, $expect_validity, "@cmd")
 	or diag("@cmd");

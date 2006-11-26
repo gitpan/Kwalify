@@ -1,3 +1,7 @@
 Revision history for Perl extension Kwalify.
 
+1.08
+	- fixed warnings in pkwalify
+	- inc version in Kwalify.pm to force reinstalling
+
 1.07	first and maybe last version :-)
