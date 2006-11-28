@@ -1,5 +1,8 @@
 Revision history for Perl extension Kwalify.
 
+1.10
+	- just some test fixes
+
 1.09
 	- fixed endless recursion when using recursive
 	  schemas or data structures

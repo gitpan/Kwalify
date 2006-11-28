@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: pkwalify.t,v 1.6 2006/11/28 21:05:14 eserte Exp $
+# $Id: pkwalify.t,v 1.6 2006/11/28 21:05:14 eserte Exp eserte $
 # Author: Slaven Rezic
 #
 
@@ -67,13 +67,14 @@ my $v;
 GetOptions("v!")
     or die "usage: $0 [-v]";
 
-plan tests => 3*(scalar(@yaml_syck_defs) + scalar(@json_defs));
+my $tests_per_case = 3;
+plan tests => 1 + $tests_per_case*(scalar(@yaml_syck_defs) + scalar(@json_defs));
 
-my $script = "pkwalify";
-my @cmd = ($^X, "-Mblib", $script, "-s");
+my $script = "$FindBin::RealBin/../blib/script/pkwalify";
+my @cmd = ($^X, "-Mblib=$FindBin::RealBin/..", $script, "-s");
 
 SKIP: {
-    skip("Need YAML::Syck for tests", scalar(@yaml_syck_defs))
+    skip("Need YAML::Syck for tests", $tests_per_case*scalar(@yaml_syck_defs))
 	if !eval { require YAML::Syck; 1 };
 
     for my $def (@yaml_syck_defs) {
@@ -82,7 +83,7 @@ SKIP: {
 }
 
 SKIP: {
-    skip("Need JSON for tests", scalar(@json_defs))
+    skip("Need JSON for tests", $tests_per_case*scalar(@json_defs))
 	if !eval { require JSON; 1 };
 
     for my $def (@json_defs) {
@@ -125,6 +126,13 @@ sub any_test {
     }
     is($valid, $expect_validity, "@cmd")
 	or diag("@cmd");
+}
+
+# Should be last because of STDERR redirection
+{
+    open(STDERR, ">" . File::Spec->devnull);
+    system($^X, "-c", "-Mblib=$FindBin::RealBin/..", $script);
+    ok($?==0, "$script compiles OK");
 }
 
 __END__
