@@ -1,10 +1,10 @@
 # -*- perl -*-
 
 #
-# $Id: Kwalify.pm,v 1.11 2006/12/02 10:05:08 eserte Exp $
+# $Id: Kwalify.pm,v 1.16 2007/01/10 22:21:12 eserte Exp $
 # Author: Slaven Rezic
 #
-# Copyright (C) 2006 Slaven Rezic. All rights reserved.
+# Copyright (C) 2006,2007 Slaven Rezic. All rights reserved.
 # This package is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 #
@@ -20,8 +20,8 @@ use base qw(Exporter);
 use vars qw(@EXPORT_OK $VERSION);
 @EXPORT_OK = qw(validate);
 
-$VERSION = '1.11';
-# sprintf("%d.%02d", q$Revision: 1.11 $ =~ /(\d+)\.(\d+)/);
+$VERSION = '1.13';
+# sprintf("%d.%02d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/);
 
 BEGIN {
     if ($] < 5.006) {
@@ -110,7 +110,7 @@ sub _additional_rules {
 	}
 	if (exists $schema->{'length'}->{'max-ex'}) {
 	    my $max = $schema->{'length'}->{'max-ex'};
-	    if ($length > $max) {
+	    if ($length >= $max) {
 		$self->_error("`$data' is too long (length $length >= max $max)");
 	    }
 	}
@@ -425,6 +425,10 @@ Typically used together with YAML or JSON:
   validate(jsonToObj($schema_data), jsonToObj($data));
 
 =head1 DESCRIPTION
+
+Kwalify is a Perl implementation for validating data structures
+against the Kwalify schema. For a schema definition, see
+L<http://www.kuwata-lab.com/kwalify/users-guide.01.html>.
 
 =head2 validate($schema_data, $data)
 
