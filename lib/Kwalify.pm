@@ -20,7 +20,7 @@ use base qw(Exporter);
 use vars qw(@EXPORT_OK $VERSION);
 @EXPORT_OK = qw(validate);
 
-$VERSION = '1.13';
+$VERSION = '1.14';
 # sprintf("%d.%02d", q$Revision: 1.16 $ =~ /(\d+)\.(\d+)/);
 
 BEGIN {
@@ -79,101 +79,105 @@ sub _validate {
 
 sub _additional_rules {
     my($self, $schema, $data, $path) = @_;
-    if (defined $schema->{pattern}) {
-	(my $pattern = $schema->{pattern}) =~ s{^/(.*)/$}{$1};
-	if ($data !~ qr{$pattern}) {
-	    $self->_error("Non-valid data `$data' does not match /$pattern/");
-	}
-    }
-    if (defined $schema->{'length'}) {
-	if (!UNIVERSAL::isa($schema->{'length'}, "HASH")) {
-	    $self->_die("`length' must be a hash with keys max and/or min");
-	}
-	my $length = length($data);
-	if (exists $schema->{'length'}->{min}) {
-	    my $min = $schema->{'length'}->{min};
-	    if ($length < $min) {
-		$self->_error("`$data' is too short (length $length < min $min)");
+    for my $schema_key (keys %$schema) {
+	if (defined $schema->{$schema_key}) {
+	    if ($schema_key eq 'pattern') {
+		(my $pattern = $schema->{pattern}) =~ s{^/(.*)/$}{$1};
+		if ($data !~ qr{$pattern}) {
+		    $self->_error("Non-valid data `$data' does not match /$pattern/");
+		}
+	    } elsif ($schema_key eq 'length') {
+		if (!UNIVERSAL::isa($schema->{'length'}, "HASH")) {
+		    $self->_die("`length' must be a hash with keys max and/or min");
+		}
+		my $length = length($data);
+		for my $sub_schema_key (keys %{ $schema->{'length'} }) {
+		    if ($sub_schema_key eq 'min') {
+			my $min = $schema->{'length'}->{min};
+			if ($length < $min) {
+			    $self->_error("`$data' is too short (length $length < min $min)");
+			}
+		    } elsif ($sub_schema_key eq 'min-ex') {
+			my $min = $schema->{'length'}->{'min-ex'};
+			if ($length <= $min) {
+			    $self->_error("`$data' is too short (length $length <= min $min)");
+			}
+		    } elsif ($sub_schema_key eq 'max') {
+			my $max = $schema->{'length'}->{max};
+			if ($length > $max) {
+			    $self->_error("`$data' is too long (length $length > max $max)");
+			}
+		    } elsif ($sub_schema_key eq 'max-ex') {
+			my $max = $schema->{'length'}->{'max-ex'};
+			if ($length >= $max) {
+			    $self->_error("`$data' is too long (length $length >= max $max)");
+			}
+		    } else {
+			$self->_die("Unexpected key `$sub_schema_key' in length specification, expected min, max, min-ex and/or max-ex");
+		    }
+		}
+	    } elsif ($schema_key eq 'enum') {
+		if (!UNIVERSAL::isa($schema->{enum}, 'ARRAY')) {
+		    $self->_die("`enum' must be an array");
+		}
+		my %valid = map { ($_,1) } @{ $schema->{enum} };
+		if (!exists $valid{$data}) {
+		    $self->_error("`$data': invalid " . _base_path($path) . " value");
+		}
+	    } elsif ($schema_key eq 'range') {
+		if (!UNIVERSAL::isa($schema->{range}, "HASH")) {
+		    $self->_die("`range' must be a hash with keys max and/or min");
+		}
+		my($lt, $le, $gt, $ge);
+		## yes? no?
+		# 	if (eval { require Scalar::Util; defined &Scalar::Util::looks_like_number }) {
+		# 	    if (Scalar::Util::looks_like_number($data)) {
+		# 		$lt = sub { $_[0] < $_[1] };
+		# 		$gt = sub { $_[0] > $_[1] };
+		# 	    } else {
+		# 		$lt = sub { $_[0] lt $_[1] };
+		# 		$gt = sub { $_[0] gt $_[1] };
+		# 	    }
+		# 	} else {
+		#	    warn "Cannot determine whether $data is a number, assume so..."; # XXX show only once
+		no warnings 'numeric';
+		$lt = sub { $_[0] < $_[1] };
+		$gt = sub { $_[0] > $_[1] };
+		$le = sub { $_[0] <= $_[1] };
+		$ge = sub { $_[0] >= $_[1] };
+		#	}
+
+		for my $sub_schema_key (keys %{ $schema->{range} }) {
+		    if ($sub_schema_key eq 'min') {
+			my $min = $schema->{range}->{min};
+			if ($lt->($data, $min)) {
+			    $self->_error("`$data' is too small (< min $min)");
+			}
+		    } elsif ($sub_schema_key eq 'min-ex') {
+			my $min = $schema->{range}->{'min-ex'};
+			if ($le->($data, $min)) {
+			    $self->_error("`$data' is too small (<= min $min)");
+			}
+		    } elsif ($sub_schema_key eq 'max') {
+			my $max = $schema->{range}->{max};
+			if ($gt->($data, $max)) {
+			    $self->_error("`$data' is too large (> max $max)");
+			}
+		    } elsif ($sub_schema_key eq 'max-ex') {
+			my $max = $schema->{range}->{'max-ex'};
+			if ($ge->($data, $max)) {
+			    $self->_error("`$data' is too large (>= max $max)");
+			}
+		    } else {
+			$self->_die("Unexpected key `$sub_schema_key' in range specification, expected min, max, min-ex and/or max-ex");
+		    }
+		}
+	    } elsif ($schema_key eq 'assert') {
+		$self->_die("`assert' is not yet implemented");
+	    } elsif ($schema_key !~ m{^(type|required|unique|name|classname|desc)$}) {
+		$self->_die("Unexpected key `$schema_key' in type specification");
 	    }
 	}
-	if (exists $schema->{'length'}->{'min-ex'}) {
-	    my $min = $schema->{'length'}->{'min-ex'};
-	    if ($length <= $min) {
-		$self->_error("`$data' is too short (length $length <= min $min)");
-	    }
-	}
-	if (exists $schema->{'length'}->{max}) {
-	    my $max = $schema->{'length'}->{max};
-	    if ($length > $max) {
-		$self->_error("`$data' is too long (length $length > max $max)");
-	    }
-	}
-	if (exists $schema->{'length'}->{'max-ex'}) {
-	    my $max = $schema->{'length'}->{'max-ex'};
-	    if ($length >= $max) {
-		$self->_error("`$data' is too long (length $length >= max $max)");
-	    }
-	}
-    }
-    if (defined $schema->{enum}) {
-	if (!UNIVERSAL::isa($schema->{enum}, 'ARRAY')) {
-	    $self->_die("`enum' must be an array");
-	}
-	my %valid = map { ($_,1) } @{ $schema->{enum} };
-	if (!exists $valid{$data}) {
-	    $self->_error("`$data': invalid " . _base_path($path) . " value");
-	}
-    }
-    if (defined $schema->{range}) {
-	if (!UNIVERSAL::isa($schema->{range}, "HASH")) {
-	    $self->_die("`range' must be a hash with keys max and/or min");
-	}
- 	my($lt, $le, $gt, $ge);
-## yes? no?
-# 	if (eval { require Scalar::Util; defined &Scalar::Util::looks_like_number }) {
-# 	    if (Scalar::Util::looks_like_number($data)) {
-# 		$lt = sub { $_[0] < $_[1] };
-# 		$gt = sub { $_[0] > $_[1] };
-# 	    } else {
-# 		$lt = sub { $_[0] lt $_[1] };
-# 		$gt = sub { $_[0] gt $_[1] };
-# 	    }
-# 	} else {
-#	    warn "Cannot determine whether $data is a number, assume so..."; # XXX show only once
-	    no warnings 'numeric';
-	    $lt = sub { $_[0] < $_[1] };
-	    $gt = sub { $_[0] > $_[1] };
-	    $le = sub { $_[0] <= $_[1] };
-	    $ge = sub { $_[0] >= $_[1] };
-#	}
-	    
-	if (exists $schema->{range}->{min}) {
-	    my $min = $schema->{range}->{min};
-	    if ($lt->($data, $min)) {
-		$self->_error("`$data' is too small (< min $min)");
-	    }
-	}
-	if (exists $schema->{range}->{'min-ex'}) {
-	    my $min = $schema->{range}->{'min-ex'};
-	    if ($le->($data, $min)) {
-		$self->_error("`$data' is too small (<= min $min)");
-	    }
-	}
-	if (exists $schema->{range}->{max}) {
-	    my $max = $schema->{range}->{max};
-	    if ($gt->($data, $max)) {
-		$self->_error("`$data' is too large (> max $max)");
-	    }
-	}
-	if (exists $schema->{range}->{'max-ex'}) {
-	    my $max = $schema->{range}->{'max-ex'};
-	    if ($ge->($data, $max)) {
-		$self->_error("`$data' is too large (>= max $max)");
-	    }
-	}
-    }
-    if (defined $schema->{assert}) {
-	$self->_die("`assert' is not yet implemented");
     }
 }
 

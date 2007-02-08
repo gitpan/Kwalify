@@ -1,5 +1,9 @@
 Revision history for Perl extension Kwalify.
 
+1.14
+	- stricter checks if schema itself is correct
+	  (croak on unhandled keys)
+
 1.13
 	- fixed bug in range/max test
 	- fixed bug in Schema::Kwalify::validate
