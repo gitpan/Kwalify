@@ -13,4 +13,3 @@ t/testdata/schema05.yaml
 t/testdata/META-spec-1.3.yml
 lib/Kwalify.pm
 lib/Schema/Kwalify.pm
-META.yml                                 Module meta-data (added by MakeMaker)
