@@ -26,8 +26,9 @@ my $show_version;
 GetOptions("f=s"       => \$schema_file,
 	   "s|silent"  => \$silent,
 	   "v|version" => \$show_version,
+	   "h|help"    => sub { print usage(); exit 0 },
 	  )
-    or usage();
+    or die usage();
 	   
 if ($show_version) {
     version();
@@ -35,12 +36,12 @@ if ($show_version) {
 }
 
 if (!defined $schema_file) {
-    usage("-f option is mandatory");
+    die usage("-f option is mandatory");
 }
 
 my $data_file = shift @ARGV;
 if (!defined $data_file) {
-    usage("datafile is mandatory");
+    die usage("datafile is mandatory");
 }
 
 my(@schema) = read_file($schema_file);
@@ -100,8 +101,12 @@ sub read_file {
 
 sub usage {
     my($msg) = @_;
-    $msg .= "\n" if defined $msg;
-    die <<EOF;
+    if (defined $msg) {
+	$msg .= "\n";
+    } else {
+	$msg = "";
+    }
+    <<EOF;
 ${msg}usage: $0 [-v] [-s] -f schema.yml data.yml
        $0 -f schema.json data.json
 EOF
@@ -151,6 +156,10 @@ Be silent if the document is valid.
 =item -v
 
 Show script and module versions and exit.
+
+=item -h --help
+
+Show summary of options.
 
 =item 
 

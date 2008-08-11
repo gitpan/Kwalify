@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Kwalify
-version:             1.18
+version:             1.19
 abstract:            Kwalify schema for data structures
 license:             perl
 author:              
