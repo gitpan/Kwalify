@@ -1,7 +1,7 @@
 # -*- mode: cperl; coding: latin-2 -*-
 
 #
-# $Id: Kwalify.pm,v 1.22 2008/07/16 19:32:40 eserte Exp $
+# $Id: Kwalify.pm,v 1.24 2008/10/05 18:16:02 eserte Exp $
 # Author: Slaven Rezic
 #
 # Copyright (C) 2006,2007,2008 Slaven Rezic. All rights reserved.
@@ -20,8 +20,8 @@ use base qw(Exporter);
 use vars qw(@EXPORT_OK $VERSION);
 @EXPORT_OK = qw(validate);
 
-$VERSION = '1.19';
-# sprintf("%d.%02d", q$Revision: 1.22 $ =~ /(\d+)\.(\d+)/);
+$VERSION = '1.20';
+# sprintf("%d.%02d", q$Revision: 1.24 $ =~ /(\d+)\.(\d+)/);
 
 BEGIN {
     if ($] < 5.006) {
@@ -319,6 +319,7 @@ sub validate_map {
     }
     if (!UNIVERSAL::isa($data, 'HASH')) {
 	$self->_error("Non-valid data " . $data . ", expected mapping");
+	return;
     }
 
     return if ($self->{done}{overload::StrVal($data)}{overload::StrVal($schema)});
@@ -557,5 +558,7 @@ at your option, any later version of Perl 5 you may have available.
 =head1 SEE ALSO
 
 L<pkwalify>, L<kwalify(1)>.
+
+Other non-XML schema languages: L<http://rjbs.manxome.org/rx/>
 
 =cut

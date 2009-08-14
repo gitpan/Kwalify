@@ -2,7 +2,7 @@
 # -*- perl -*-
 
 #
-# $Id: pkwalify.t,v 1.9 2007/09/22 10:45:13 eserte Exp $
+# $Id: pkwalify.t,v 1.12 2008/10/05 18:16:24 eserte Exp $
 # Author: Slaven Rezic
 #
 
@@ -14,7 +14,7 @@ BEGIN {
     if (!eval q{
 	use Test::More;
 	use File::Temp;
-	use File::Spec;
+	use File::Spec 0.8; # rel2abs
 	1;
     }) {
 	print "1..0 # skip: no Test::More, File::Spec and/or File::Temp modules\n";
@@ -40,6 +40,13 @@ my %combined_document;
 
 	my($fh,$outfile) = File::Temp::tempfile(SUFFIX => ".yaml",
 						UNLINK => 1);
+	if (!$fh) {
+	    die "Cannot create temporary file: $!";
+	}
+
+	# fix possible problem if somebody sets TMPDIR=.
+	$outfile = File::Spec->rel2abs($outfile)
+	    if !File::Spec->file_name_is_absolute($outfile);
 
 	for my $document (@yaml) {
 	    print $fh "--- \n";
@@ -207,7 +214,7 @@ sub _run_pkwalify {
     if (eval { require IPC::Run; 1 }) {
 	$can_capture = 1;
 	$success = IPC::Run::run(\@cmd, \$stdin, \$stdout, \$stderr) ? 1 : 0;
-    } elsif (eval { require IPC::Open3; 1 }) {
+    } else {
 	*OLDOUT = *OLDOUT; # cease -w
 	*OLDERR = *OLDERR; # cease -w
 	open(OLDOUT, ">&STDOUT") or die $!;
@@ -221,10 +228,6 @@ sub _run_pkwalify {
 	open(STDOUT, ">&OLDOUT") or die $!;
 
 	$success = $? == 0 ? 1 : 0;
-    } else {
-	# Should not happen, every perl5 installation should have
-	# IPC::Open3
-	warn "Cannot test, no IPC::Run and/or IPC::Open3 available";
     }
 
     return { success => $success,
