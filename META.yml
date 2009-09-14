@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Kwalify
-version:            1.20
+version:            1.20_50
 abstract:           Kwalify schema for data structures
 author:
     - Slaven Rezic <srezic@cpan.org>
@@ -11,6 +11,8 @@ configure_requires:
 build_requires:
     ExtUtils::MakeMaker:  0
 requires:  {}
+resources:
+    repository:  git://github.com/eserte/p5-Kwalify.git
 no_index:
     directory:
         - t
