@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Kwalify
-version:            1.20_51
+version:            1.21
 abstract:           Kwalify schema for data structures
 author:
     - Slaven Rezic <srezic@cpan.org>
